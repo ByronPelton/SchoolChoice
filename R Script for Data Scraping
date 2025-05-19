@@ -1,0 +1,33 @@
+rm(list=ls())
+gc()
+
+library(tidyverse)
+library(rvest)
+
+codes <- state.abb %>% append("dc", after = 8) %>% toupper
+salaries <- tibble(DATE = NULL, VALUE = NULL, CODE = NULL)
+
+for(code in codes){
+  url <- paste0(
+    "https://fred.stlouisfed.org/data/",
+    code,
+    "WEDU")
+  
+  result <- tryCatch(
+    read_html(url) %>%
+      html_element("table#data-table-observations") %>%
+      html_table() %>%
+      mutate(CODE = code),
+  error = function(e) {
+    NULL
+  })
+  
+  if(is.null(result)){
+    lost <- c(lost, code)
+  } else {
+    found <- c(found, code)
+    
+    salaries <- bind_rows(salaries, result)
+  }
+    Sys.sleep(0.2)
+}
